@@ -49,7 +49,10 @@ final class Formidable_Digitalocean_Spaces {
 	 * @return [type] [description]
 	 */
 	private function includes() {
+		// Require the Composer autoloader.
+		require FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'vendor/autoload.php';
 		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/functions.php';
+		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-api.php';
 	}
 
 	/**
@@ -57,6 +60,48 @@ final class Formidable_Digitalocean_Spaces {
 	 * @return [type] [description]
 	 */
 	private function hooks() {
+		$this->api = new Formidable_Digitalocean_Spaces_API();
+
+		add_action( 'init', [ $this, 'init' ] );
+		add_action( 'frm_after_create_entry', [ $this, 'upload_file' ], 30, 2 );
+	}
+
+	public function init() {
+		// print_r( $this->api->get_bucket() );
+		// print_r( $this->api->list_files() );
+	}
+
+	public function upload_file( $entry_id, $form_id ) {
+		$entry  = \FrmEntry::getOne( $entry_id );
+		$fields = \FrmField::getAll(
+			array(
+				'fi.form_id'  => (int) $form_id,
+				'fi.type not' => \FrmField::no_save_fields(),
+			)
+		);
+
+		$entry_values = new \FrmEntryValues( $entry_id );
+		$field_values = $entry_values->get_field_values();
+
+		foreach ( $fields as $field ) {
+			if ( 'file' === $field->type ) {
+				$field_value   = $field_values[ $field->id ];
+				$attachment_id = $field_value->get_saved_value();
+				$attachment    = get_attached_file( $attachment_id );
+				$file_name     = basename( $attachment );
+				$file_name     = $attachment_id . '-' . $file_name;
+				$file_contents = file_get_contents( $attachment );
+
+				$this->api->upload_file(
+					[
+						'Bucket' => $this->api->get_bucket(),
+						'Key'    => $file_name,
+						'Body'   => $file_contents,
+						'ACL'    => 'private',
+					]
+				);
+			}
+		}
 	}
 
 	/**
