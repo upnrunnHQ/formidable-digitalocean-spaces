@@ -53,6 +53,11 @@ final class Formidable_Digitalocean_Spaces {
 		require FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'vendor/autoload.php';
 		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/functions.php';
 		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-api.php';
+		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-api.php';
+
+		if ( is_admin() ) {
+			include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-settings.php';
+		}
 	}
 
 	/**
@@ -61,6 +66,9 @@ final class Formidable_Digitalocean_Spaces {
 	 */
 	private function hooks() {
 		$this->api = new Formidable_Digitalocean_Spaces_API();
+		if ( is_admin() ) {
+			$this->settings = new Formidable_Digitalocean_Spaces_Settings();
+		}
 
 		add_action( 'wp_ajax_test_do_spaces', [ $this, 'test_do_spaces' ] );
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
@@ -70,65 +78,75 @@ final class Formidable_Digitalocean_Spaces {
 	public function test_do_spaces() {
 		// print_r( $this->api->get_bucket() );
 		// $this->api->list_files();
-		formidable_digitalocean_spaces()->upload_file( 267, 11 );
+		// formidable_digitalocean_spaces()->upload_file( 267, 11 );
 		wp_send_json( [] );
 	}
 
 	public function enqueue_scripts() {
-		$asset_file = include FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'build/index.asset.php';
+		if ( formidable_digitalocean_spaces()->api->has_api_credentials()
+			&& formidable_digitalocean_spaces()->api->has_bucket_name()
+			&& formidable_digitalocean_spaces()->api->has_ff_field_ids()
+			&& formidable_digitalocean_spaces()->api->has_wait_message()
+		) {
+			$asset_file = include FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'build/index.asset.php';
 
-		wp_enqueue_script(
-			'formidable-digitalocean-spaces',
-			plugins_url( 'build/index.js', FORMIDABLE_DIGITALOCEAN_SPACES_FILE ),
-			array_merge( $asset_file['dependencies'], [ 'formidable' ] ),
-			$asset_file['version'],
-			true
-		);
+			wp_enqueue_script(
+				'formidable-digitalocean-spaces',
+				plugins_url( 'build/index.js', FORMIDABLE_DIGITALOCEAN_SPACES_FILE ),
+				array_merge( $asset_file['dependencies'], [ 'formidable' ] ),
+				$asset_file['version'],
+				true
+			);
+
+			wp_localize_script(
+				'formidable-digitalocean-spaces',
+				'formidable_digitalocean_spaces',
+				array(
+					'upload_field_id' => formidable_digitalocean_spaces()->api->options['upload'],
+					'wait_message'    => formidable_digitalocean_spaces()->api->options['wait_message'],
+				)
+			);
+		}
 	}
 
 	public function upload_file( $entry_id, $form_id ) {
-		$file_field_id = 207;
-		$text_field_id = 210;
+		if ( formidable_digitalocean_spaces()->api->has_api_credentials()
+			&& formidable_digitalocean_spaces()->api->has_bucket_name()
+			&& formidable_digitalocean_spaces()->api->has_ff_field_ids()
+		) {
+			$file_field_id = formidable_digitalocean_spaces()->api->options['upload'];
+			$text_field_id = formidable_digitalocean_spaces()->api->options['file'];
 
-		$entry  = \FrmEntry::getOne( $entry_id );
-		$fields = \FrmField::getAll(
-			array(
-				'fi.form_id'  => (int) $form_id,
-				'fi.type not' => \FrmField::no_save_fields(),
-			)
-		);
+			$entry        = \FrmEntry::getOne( $entry_id );
+			$entry_values = new \FrmEntryValues( $entry_id );
+			$fields       = \FrmField::getAll(
+				array(
+					'fi.form_id'  => (int) $form_id,
+					'fi.type not' => \FrmField::no_save_fields(),
+				)
+			);
 
-		$entry_values = new \FrmEntryValues( $entry_id );
-		$field_values = $entry_values->get_field_values();
+			$field_values = $entry_values->get_field_values();
 
-		foreach ( $fields as $field ) {
-			if ( intval( $field->id ) === $file_field_id ) {
-				$field_value   = $field_values[ $field->id ];
-				$attachment_id = $field_value->get_saved_value();
-				$attachment    = get_attached_file( $attachment_id );
-				if ( $attachment ) {
-					$file_name     = basename( $attachment );
-					$file_name     = $attachment_id . '-' . $file_name;
-					$file_contents = file_get_contents( $attachment );
+			foreach ( $fields as $field ) {
+				if ( absint( $field->id ) === $file_field_id ) {
+					$field_value   = $field_values[ $field->id ];
+					$attachment_id = $field_value->get_saved_value();
+					$attachment    = get_attached_file( $attachment_id );
+					if ( $attachment ) {
+						$file_name     = basename( $attachment );
+						$file_name     = $attachment_id . '-' . $file_name;
+						$file_contents = file_get_contents( $attachment );
+						$object_url    = $this->api->upload_file( $file_name, $file_contents );
 
-					$uploaded = $this->api->upload_file(
-						[
-							'Bucket' => $this->api->get_bucket(),
-							'Key'    => $file_name,
-							'Body'   => $file_contents,
-							'ACL'    => 'public-read',
-						]
-					);
+						$added = \FrmEntryMeta::add_entry_meta( $entry_id, $text_field_id, null, $object_url );
+						if ( ! $added ) {
+							\FrmEntryMeta::update_entry_meta( $entry_id, $text_field_id, null, $object_url );
+						}
 
-					$object_url = $uploaded->get( 'ObjectURL' );
-
-					$added = \FrmEntryMeta::add_entry_meta( $entry_id, $text_field_id, null, $object_url );
-					if ( ! $added ) {
-						\FrmEntryMeta::update_entry_meta( $entry_id, $text_field_id, null, $object_url );
+						wp_delete_attachment( $attachment_id, true );
+						\FrmEntryMeta::delete_entry_meta( $entry_id, $file_field_id );
 					}
-
-					wp_delete_attachment( $attachment_id, true );
-					\FrmEntryMeta::delete_entry_meta( $entry_id, $file_field_id );
 				}
 			}
 		}

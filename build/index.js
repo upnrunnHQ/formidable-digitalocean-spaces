@@ -1,1 +1,1 @@
-!function(e){"use strict";e(document).ready((function(){e("#file207_dropzone").get(0).dropzone.on("addedfile",(e=>{e.size>=52428800&&alert("Large file is uploading please be patient, take a sip of coffee and breathe.")}))}))}(jQuery);
+!function(e){"use strict";e(document).ready((function(){e(`#file${formidable_digitalocean_spaces.upload_field_id}_dropzone`).get(0).dropzone.on("addedfile",(e=>{e.size>=52428800&&alert(formidable_digitalocean_spaces.wait_message)}))}))}(jQuery);
