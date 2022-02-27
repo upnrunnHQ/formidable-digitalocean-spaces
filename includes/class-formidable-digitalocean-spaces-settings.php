@@ -161,35 +161,6 @@ class Formidable_Digitalocean_Spaces_Settings {
 
 		if ( isset( $input['bucket'] ) ) {
 			$new_input['bucket'] = sanitize_text_field( $input['bucket'] );
-
-			if ( isset( $new_input['endpoint'], $new_input['key'], $new_input['secret'] ) && ! empty( $new_input['endpoint'] ) && empty( $new_input['key'] ) && empty( $new_input['secret'] ) ) {
-				$bucket_exists = false;
-				$client        = new S3Client(
-					[
-						'version'     => 'latest',
-						'region'      => 'us-east-1',
-						'endpoint'    => $new_input['endpoint'],
-						'credentials' => [
-							'key'    => $new_input['key'],
-							'secret' => $new_input['secret'],
-						],
-					]
-				);
-
-				$spaces = $client->listBuckets();
-
-				foreach ( $spaces['Buckets'] as $space ) {
-					if ( $new_input['bucket'] === $space['Name'] ) {
-						$bucket_exists = true;
-					}
-				}
-
-				if ( ! $bucket_exists ) {
-					$client->createBucket(
-						[ 'Bucket' => $new_input['bucket'] ]
-					);
-				}
-			}
 		}
 
 		if ( isset( $input['upload'] ) ) {

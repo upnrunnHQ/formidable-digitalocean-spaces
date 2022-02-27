@@ -70,24 +70,43 @@ class Formidable_Digitalocean_Spaces_API {
 
 	public function upload_file( $key = '', $body = '' ) {
 		if ( $this->has_api_credentials() && $this->has_bucket_name() ) {
-			$object = $this->client->putObject(
-				[
-					'Bucket' => $this->get_bucket(),
-					'Key'    => $key,
-					'Body'   => $body,
-					'ACL'    => 'public-read',
-				]
-			);
+			try {
+				$bucket        = $this->get_bucket();
+				$bucket_exists = false;
 
-			return $object->get( 'ObjectURL' );
+				$spaces = $this->list_buckets();
+
+				foreach ( $spaces['Buckets'] as $space ) {
+					if ( $bucket === $space['Name'] ) {
+						$bucket_exists = true;
+					}
+				}
+
+				if ( ! $bucket_exists ) {
+					$this->create_bucket();
+				}
+
+				$object = $this->client->putObject(
+					[
+						'Bucket' => $this->get_bucket(),
+						'Key'    => $key,
+						'Body'   => $body,
+						'ACL'    => 'public-read',
+					]
+				);
+
+				return $object->get( 'ObjectURL' );
+			} catch ( Exception $e ) {
+				return false;
+			}
 		}
 
 		return false;
 	}
 
-	public function create_bucket( $bucket ) {
+	public function create_bucket() {
 		$this->client->createBucket(
-			[ 'Bucket' => $bucket ]
+			[ 'Bucket' => $this->get_bucket() ]
 		);
 	}
 
