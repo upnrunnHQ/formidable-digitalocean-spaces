@@ -119,21 +119,23 @@ final class Formidable_Digitalocean_Spaces {
 			$text_field_id = formidable_digitalocean_spaces()->api->options['file'];
 
 			if ( isset( $_POST['item_meta'][ $file_field_id ] ) ) {
-				$file_id       = absint( $_POST['item_meta'][ $file_field_id ] );
-				$attached_file = get_attached_file( $file_id );
-				$file_name     = basename( $attached_file );
-				$file_name     = sanitize_title( $_POST['item_meta'][ $file_field_id ] ) . '-' . $file_name;
-				$file_contents = file_get_contents( $attached_file );
+				$file_id = absint( $_POST['item_meta'][ $file_field_id ] );
+				if ( $file_id ) {
+					$attached_file = get_attached_file( $file_id );
+					$file_name     = basename( $attached_file );
+					$file_name     = sanitize_title( $_POST['item_meta'][ $file_field_id ] ) . '-' . $file_name;
+					$file_contents = file_get_contents( $attached_file );
 
-				$object_url = $this->api->upload_file( $file_name, $file_contents );
-				if ( $object_url ) {
-					$meta_added = \FrmEntryMeta::add_entry_meta( $entry_id, $text_field_id, null, $object_url );
-					if ( ! $meta_added ) {
-						\FrmEntryMeta::update_entry_meta( $entry_id, $text_field_id, null, $object_url );
+					$object_url = $this->api->upload_file( $file_name, $file_contents );
+					if ( $object_url ) {
+						$meta_added = \FrmEntryMeta::add_entry_meta( $entry_id, $text_field_id, null, $object_url );
+						if ( ! $meta_added ) {
+							\FrmEntryMeta::update_entry_meta( $entry_id, $text_field_id, null, $object_url );
+						}
+
+						\FrmEntryMeta::delete_entry_meta( $entry_id, $file_field_id );
+						wp_delete_attachment( $file_id, true );
 					}
-
-					\FrmEntryMeta::delete_entry_meta( $entry_id, $file_field_id );
-					wp_delete_attachment( $file_id, true );
 				}
 			}
 		}
