@@ -71,16 +71,20 @@ final class Formidable_Digitalocean_Spaces {
 		}
 
 		add_action( 'wp_ajax_test_do_spaces', [ $this, 'test_do_spaces' ] );
+		add_action( 'plugins_loaded', [ $this, 'on_plugins_loaded' ] );
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 		add_action( 'frm_after_create_entry', [ $this, 'upload_file' ], 30, 2 );
 		add_action( 'frm_after_update_entry', [ $this, 'upload_file' ], 10, 2 );
 	}
 
 	public function test_do_spaces() {
-		// print_r( $this->api->get_bucket() );
-		// $this->api->list_files();
-		// formidable_digitalocean_spaces()->upload_file( 267, 11 );
 		wp_send_json( [] );
+	}
+
+	public function on_plugins_loaded() {
+		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-file-field.php';
+		add_filter( 'frm_get_field_type_class', [ $this, 'get_field_type_class' ], 10, 2 );
+		add_filter( 'frm_available_fields', [ $this, 'add_digitalocean_file_field' ] );
 	}
 
 	public function enqueue_scripts() {
@@ -139,6 +143,23 @@ final class Formidable_Digitalocean_Spaces {
 				}
 			}
 		}
+	}
+
+	public function get_field_type_class( $class, $field_type ) {
+		if ( 'digitalocean_file' === $field_type ) {
+			return 'Upnrunn\Formidable_Digitalocean_Spaces_File_Field';
+		}
+
+		return $class;
+	}
+
+	public function add_digitalocean_file_field( $fields ) {
+		$fields['digitalocean_file'] = array(
+			'name' => __( 'DO File Upload' ),
+			'icon' => 'frm_icon_font frm_pencil_icon', // Set the class for a custom icon here.
+		);
+
+		return $fields;
 	}
 
 	/**
