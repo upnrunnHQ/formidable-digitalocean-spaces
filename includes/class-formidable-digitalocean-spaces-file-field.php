@@ -5,6 +5,9 @@ namespace Upnrunn;
 defined( 'ABSPATH' ) || exit;
 
 use FrmFieldType;
+use FrmField;
+use FrmAppHelper;
+use FrmFieldsHelper;
 
 /**
  * @since 3.0
