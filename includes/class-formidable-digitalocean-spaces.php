@@ -155,7 +155,12 @@ final class Formidable_Digitalocean_Spaces {
 
 						$object_url = $this->api->upload_file( $file_name, $file_contents );
 						if ( $object_url ) {
-							$new_value[] = $object_url;
+							$new_value[] = [
+								'Bucket'    => formidable_digitalocean_spaces()->api->get_bucket(),
+								'Key'       => $file_name,
+								'ObjectURL' => $object_url,
+							];
+
 							wp_delete_attachment( $attached_file_id, true );
 						}
 					}
@@ -171,7 +176,12 @@ final class Formidable_Digitalocean_Spaces {
 
 				$object_url = $this->api->upload_file( $file_name, $file_contents );
 				if ( $object_url ) {
-					$new_value = $object_url;
+					$new_value = [
+						'Bucket'    => formidable_digitalocean_spaces()->api->get_bucket(),
+						'Key'       => $file_name,
+						'ObjectURL' => $object_url,
+					];
+
 					wp_delete_attachment( $attached_file_id, true );
 				}
 			}
