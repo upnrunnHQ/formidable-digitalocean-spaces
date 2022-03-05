@@ -4,6 +4,10 @@ namespace Upnrunn;
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
 
+use FrmField;
+use FrmAppHelper;
+use FrmProFileField;
+
 /**
  * WooCommerce_Grow_Cart class.
  * @var [type]
@@ -82,9 +86,16 @@ final class Formidable_Digitalocean_Spaces {
 	}
 
 	public function on_plugins_loaded() {
+		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-field-file.php';
 		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-file-field.php';
 		add_filter( 'frm_get_field_type_class', [ $this, 'get_field_type_class' ], 10, 2 );
 		add_filter( 'frm_available_fields', [ $this, 'add_digitalocean_file_field' ] );
+
+		remove_action( 'wp_ajax_nopriv_frm_submit_dropzone', 'FrmProFieldsController::ajax_upload' );
+		remove_action( 'wp_ajax_frm_submit_dropzone', 'FrmProFieldsController::ajax_upload' );
+
+		add_action( 'wp_ajax_nopriv_frm_submit_dropzone', [ $this, 'ajax_upload' ] );
+		add_action( 'wp_ajax_frm_submit_dropzone', [ $this, 'ajax_upload' ] );
 	}
 
 	public function enqueue_scripts() {
@@ -115,39 +126,70 @@ final class Formidable_Digitalocean_Spaces {
 	}
 
 	public function upload_file( $entry_id, $form_id ) {
-		if ( formidable_digitalocean_spaces()->api->has_api_credentials()
-			&& formidable_digitalocean_spaces()->api->has_bucket_name()
-			&& formidable_digitalocean_spaces()->api->has_ff_field_ids()
+		if ( ! formidable_digitalocean_spaces()->api->has_api_credentials()
+			|| ! formidable_digitalocean_spaces()->api->has_bucket_name()
+			|| ! formidable_digitalocean_spaces()->api->has_ff_field_ids()
 		) {
-			$file_field_id = formidable_digitalocean_spaces()->api->options['upload'];
-			$text_field_id = formidable_digitalocean_spaces()->api->options['file'];
+			return;
+		}
 
-			if ( isset( $_POST['item_meta'][ $file_field_id ] ) ) {
-				$file_id = absint( $_POST['item_meta'][ $file_field_id ] );
-				if ( $file_id ) {
-					$attached_file = get_attached_file( $file_id );
-					$file_name     = basename( $attached_file );
-					$file_name     = sanitize_title( $_POST['item_meta'][ $file_field_id ] ) . '-' . $file_name;
-					$file_contents = file_get_contents( $attached_file );
+		foreach ( $_POST['item_meta'] as $field_id => $value ) {
+			if ( ! $field_id ) {
+				continue;
+			}
 
-					$object_url = $this->api->upload_file( $file_name, $file_contents );
-					if ( $object_url ) {
-						$meta_added = \FrmEntryMeta::add_entry_meta( $entry_id, $text_field_id, null, $object_url );
-						if ( ! $meta_added ) {
-							\FrmEntryMeta::update_entry_meta( $entry_id, $text_field_id, null, $object_url );
+			$field = FrmField::getOne( $field_id, true );
+			if ( 'digitalocean_file' !== $field->type ) {
+				continue;
+			}
+
+			if ( is_array( $_POST['item_meta'][ $field_id ] ) ) {
+				$new_value = [];
+				foreach ( $_POST['item_meta'][ $field_id ] as $p ) {
+					if ( is_numeric( $p ) ) {
+						$attached_file_id = $p;
+						$attached_file    = get_attached_file( $attached_file_id );
+						$file_name        = basename( $attached_file );
+						$file_name        = $attached_file_id . '-' . $file_name;
+						$file_contents    = file_get_contents( $attached_file );
+
+						$object_url = $this->api->upload_file( $file_name, $file_contents );
+						if ( $object_url ) {
+							$new_value[] = $object_url;
+							wp_delete_attachment( $attached_file_id, true );
 						}
-
-						\FrmEntryMeta::delete_entry_meta( $entry_id, $file_field_id );
-						wp_delete_attachment( $file_id, true );
 					}
 				}
+			} elseif ( is_numeric( $_POST['item_meta'][ $field_id ] ) ) {
+				$new_value = '';
+
+				$attached_file_id = $_POST['item_meta'][ $field_id ];
+				$attached_file    = get_attached_file( $attached_file_id );
+				$file_name        = basename( $attached_file );
+				$file_name        = $attached_file_id . '-' . $file_name;
+				$file_contents    = file_get_contents( $attached_file );
+
+				$object_url = $this->api->upload_file( $file_name, $file_contents );
+				if ( $object_url ) {
+					$new_value = $object_url;
+					wp_delete_attachment( $attached_file_id, true );
+				}
+			}
+
+			if ( empty( $new_value ) || '' === $new_value ) {
+				return;
+			}
+
+			$meta_added = \FrmEntryMeta::add_entry_meta( $entry_id, $field_id, null, $new_value );
+			if ( ! $meta_added ) {
+				\FrmEntryMeta::update_entry_meta( $entry_id, $field_id, null, $new_value );
 			}
 		}
 	}
 
 	public function get_field_type_class( $class, $field_type ) {
 		if ( 'digitalocean_file' === $field_type ) {
-			return 'Upnrunn\Formidable_Digitalocean_Spaces_File_Field';
+			return 'Upnrunn\Formidable_Digitalocean_Spaces_Field_File';
 		}
 
 		return $class;
@@ -160,6 +202,22 @@ final class Formidable_Digitalocean_Spaces {
 		);
 
 		return $fields;
+	}
+
+	public static function ajax_upload() {
+		// Skip nonce for caching.
+		$response = Formidable_Digitalocean_Spaces_File_Field::ajax_upload();
+
+		if ( ! empty( $response['errors'] ) ) {
+			status_header( 403 );
+			$status = 403;
+			echo implode( ' ', $response['errors'] );
+		} else {
+			$status = 200;
+			echo json_encode( $response['media_ids'] );
+		}
+
+		wp_die( '', '', array( 'response' => $status ) );
 	}
 
 	/**
