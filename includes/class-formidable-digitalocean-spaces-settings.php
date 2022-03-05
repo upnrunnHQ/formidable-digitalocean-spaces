@@ -78,7 +78,7 @@ class Formidable_Digitalocean_Spaces_Settings {
 
 		add_settings_section(
 			'formidable_digitalocean_spaces_section_formidable_fields', // ID
-			__( 'Formidable Fields' ), // Title
+			__( 'Formidable Forms' ), // Title
 			array( $this, 'section_formidable_fields_callback' ), // Callback
 			'formidable-digitalocean-spaces' // Page
 		);
@@ -116,22 +116,6 @@ class Formidable_Digitalocean_Spaces_Settings {
 		);
 
 		add_settings_field(
-			'upload', // ID
-			__( 'Upload Field' ), // Title
-			array( $this, 'field_upload_callback' ), // Callback
-			'formidable-digitalocean-spaces', // Page
-			'formidable_digitalocean_spaces_section_formidable_fields' // Section
-		);
-
-		add_settings_field(
-			'file', // ID
-			__( 'File Field' ), // Title
-			array( $this, 'field_file_callback' ), // Callback
-			'formidable-digitalocean-spaces', // Page
-			'formidable_digitalocean_spaces_section_formidable_fields' // Section
-		);
-
-		add_settings_field(
 			'wait_message', // ID
 			__( 'Wait Message' ), // Title
 			array( $this, 'field_wait_message_callback' ), // Callback
@@ -163,14 +147,6 @@ class Formidable_Digitalocean_Spaces_Settings {
 			$new_input['bucket'] = sanitize_text_field( $input['bucket'] );
 		}
 
-		if ( isset( $input['upload'] ) ) {
-			$new_input['upload'] = absint( $input['upload'] );
-		}
-
-		if ( isset( $input['file'] ) ) {
-			$new_input['file'] = absint( $input['file'] );
-		}
-
 		if ( isset( $input['wait_message'] ) ) {
 			$new_input['wait_message'] = sanitize_text_field( $input['wait_message'] );
 		}
@@ -190,7 +166,7 @@ class Formidable_Digitalocean_Spaces_Settings {
 
 	public function section_formidable_fields_callback( $args ) {
 		?>
-		<p id="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Please enter Formidable field IDs below.', 'wporg' ); ?></p>
+		<p id="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Please enter Formidable Forms settings below.', 'wporg' ); ?></p>
 		<?php
 	}
 
@@ -231,26 +207,6 @@ class Formidable_Digitalocean_Spaces_Settings {
 		printf(
 			'<input type="text" class="regular-text" id="bucket" name="formidable_digitalocean_spaces_options[bucket]" value="%s" />',
 			isset( $this->options['bucket'] ) ? esc_attr( $this->options['bucket'] ) : ''
-		);
-	}
-
-	/**
-	 * Get the settings option array and print one of its values
-	 */
-	public function field_upload_callback( $args ) {
-		printf(
-			'<input type="text" class="regular-text" id="upload" name="formidable_digitalocean_spaces_options[upload]" value="%s" />',
-			isset( $this->options['upload'] ) ? esc_attr( $this->options['upload'] ) : ''
-		);
-	}
-
-	/**
-	 * Get the settings option array and print one of its values
-	 */
-	public function field_file_callback( $args ) {
-		printf(
-			'<input type="text" class="regular-text" id="file" name="formidable_digitalocean_spaces_options[file]" value="%s" />',
-			isset( $this->options['file'] ) ? esc_attr( $this->options['file'] ) : ''
 		);
 	}
 
