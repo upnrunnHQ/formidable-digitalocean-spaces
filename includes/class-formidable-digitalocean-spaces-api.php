@@ -60,7 +60,7 @@ class Formidable_Digitalocean_Spaces_API {
 		return false;
 	}
 
-	public function upload_file( $key = '', $body = '' ) {
+	public function upload_file( $key = '', $attached_file = '' ) {
 		if ( $this->has_api_credentials() && $this->has_bucket_name() ) {
 			try {
 				$bucket        = $this->get_bucket();
@@ -80,10 +80,10 @@ class Formidable_Digitalocean_Spaces_API {
 
 				$object = $this->client->putObject(
 					[
-						'Bucket' => $this->get_bucket(),
-						'Key'    => $key,
-						'Body'   => $body,
-						'ACL'    => 'public-read',
+						'Bucket'     => $this->get_bucket(),
+						'Key'        => $key,
+						'SourceFile' => $attached_file,
+						'ACL'        => 'public-read',
 					]
 				);
 
