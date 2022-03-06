@@ -13,6 +13,7 @@ use FrmAntiSpam;
 use FrmEntryValidate;
 use FrmDb;
 use FrmCreateFile;
+use FrmProFilePayloadBuilder;
 
 class Formidable_Digitalocean_Spaces_File_Field {
 
@@ -176,15 +177,15 @@ class Formidable_Digitalocean_Spaces_File_Field {
 	 * @return array
 	 */
 	private static function get_mock_file( $media_id ) {
-		$file_url  = self::get_file_url( $media_id );
-		$path      = get_attached_file( $media_id );
-		$file_type = wp_check_filetype( $path );
+		$file_url  = $media_id['ObjectURL'];
+		$path      = $file_url;
+		$file_type = wp_check_filetype( $file_url );
 		$file      = array(
 			'name'       => basename( $path ),
-			'url'        => self::get_file_url( $media_id, 'thumbnail' ),
-			'id'         => $media_id,
+			'url'        => $file_url,
+			'id'         => 0,
 			'file_url'   => $file_url,
-			'accessible' => self::user_has_permission( $media_id ),
+			'accessible' => true,
 			'ext'        => $file_type['ext'],
 			'type'       => $file_type['type'],
 		);

@@ -44,14 +44,6 @@ class Formidable_Digitalocean_Spaces_API {
 		return true;
 	}
 
-	public function has_ff_field_ids() {
-		if ( ! isset( $this->options['upload'], $this->options['file'] ) || empty( $this->options['upload'] ) || empty( $this->options['file'] ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
 	public function has_wait_message() {
 		if ( ! isset( $this->options['wait_message'] ) || empty( $this->options['wait_message'] ) ) {
 			return false;

@@ -82,7 +82,14 @@ final class Formidable_Digitalocean_Spaces {
 	}
 
 	public function test_do_spaces() {
-		wp_send_json( [] );
+		wp_send_json(
+			[
+				formidable_digitalocean_spaces()->api->upload_file(
+					'test.png',
+					'test'
+				),
+			]
+		);
 	}
 
 	public function on_plugins_loaded() {
@@ -101,7 +108,6 @@ final class Formidable_Digitalocean_Spaces {
 	public function enqueue_scripts() {
 		if ( formidable_digitalocean_spaces()->api->has_api_credentials()
 			&& formidable_digitalocean_spaces()->api->has_bucket_name()
-			&& formidable_digitalocean_spaces()->api->has_ff_field_ids()
 			&& formidable_digitalocean_spaces()->api->has_wait_message()
 		) {
 			$asset_file = include FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'build/index.asset.php';
@@ -128,7 +134,6 @@ final class Formidable_Digitalocean_Spaces {
 	public function upload_file( $entry_id, $form_id ) {
 		if ( ! formidable_digitalocean_spaces()->api->has_api_credentials()
 			|| ! formidable_digitalocean_spaces()->api->has_bucket_name()
-			|| ! formidable_digitalocean_spaces()->api->has_ff_field_ids()
 		) {
 			return;
 		}

@@ -183,6 +183,8 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 			return $value;
 		}
 
+		return json_encode( $value );
+
 		$showing_image = ( isset( $atts['html'] ) && $atts['html'] ) || ( isset( $atts['show_image'] ) && $atts['show_image'] );
 		$default_sep   = $showing_image ? ' ' : ', ';
 		$atts['sep']   = isset( $atts['sep'] ) ? $atts['sep'] : $default_sep;
@@ -443,7 +445,7 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 		$this->add_aria_description( $args, $aria );
 
 		ob_start();
-		include( FrmProAppHelper::plugin_path() . '/classes/views/frmpro-fields/front-end/file.php' );
+		include FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'templates/front-end/file.php';
 		$input_html = ob_get_contents();
 		ob_end_clean();
 
