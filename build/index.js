@@ -8,14 +8,20 @@ var __webpack_exports__ = {};
 
   const largeFileSize = 50 * 1024 * 1024;
   $(document).ready(function () {
-    // $(`#file${formidable_digitalocean_spaces.upload_field_id}_dropzone`)
-    // 	.get(0)
-    // 	.dropzone.on("addedfile", (file) => {
-    // 		if (file.size >= largeFileSize) {
-    // 			alert(formidable_digitalocean_spaces.wait_message);
-    // 		}
-    // 	});
-    console.log(__frmDropzone);
+    $(`#file21_dropzone`).get(0).dropzone.on("addedfile", file => {
+      if (file.size >= largeFileSize) {
+        alert(formidable_digitalocean_spaces.wait_message);
+      }
+    });
+    $(`#file21_dropzone`).get(0).dropzone.on("complete", file => {
+      console.log('ddd');
+
+      if (typeof file.mediaID !== "undefined") {
+        if (uploadFields[i].uploadMultiple) {
+          jQuery(file.previewElement).append(getHiddenUploadHTML(uploadFields[i], file.mediaID, fieldName));
+        }
+      }
+    });
   });
 })(jQuery);
 /******/ })()

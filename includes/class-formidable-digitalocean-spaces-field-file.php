@@ -180,10 +180,8 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 
 	protected function prepare_display_value( $value, $atts ) {
 		if ( ! is_numeric( $value ) && ! is_array( $value ) ) {
-			return $value;
+			// return $value;
 		}
-
-		return json_encode( $value );
 
 		$showing_image = ( isset( $atts['html'] ) && $atts['html'] ) || ( isset( $atts['show_image'] ) && $atts['show_image'] );
 		$default_sep   = $showing_image ? ' ' : ', ';
@@ -237,10 +235,10 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 
 	public function set_file_atts( $atts ) {
 		$new_atts = array(
-			'show_filename' => ( isset( $atts['show_filename'] ) && $atts['show_filename'] ),
-			'show_image'    => ( isset( $atts['show_image'] ) && $atts['show_image'] ),
-			'add_link'      => ( isset( $atts['add_link'] ) && $atts['add_link'] ),
-			'new_tab'       => ( isset( $atts['new_tab'] ) && $atts['new_tab'] ),
+			'show_filename' => isset( $atts['show_filename'] ) ? $atts['show_filename'] : true,
+			'show_image'    => isset( $atts['show_image'] ) ? $atts['show_image'] : true,
+			'add_link'      => isset( $atts['add_link'] ) ? $atts['add_link'] : true,
+			'new_tab'       => isset( $atts['new_tab'] ) ? $atts['new_tab'] : true,
 		);
 		return array_merge( $atts, $new_atts );
 	}
@@ -322,20 +320,14 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 		$atts['size'] = $size;
 
 		$img_html = array();
-		foreach ( (array) $ids as $id ) {
-			if ( ! is_numeric( $id ) ) {
-				if ( ! empty( $id ) ) {
-					// If a custom value was set with a hook, don't remove it
-					$img_html[] = $id;
-				}
-				continue;
-			}
 
+		foreach ( (array) $ids as $id ) {
 			$img = $this->get_file_display( $id, $atts );
 			if ( $img ) {
 				$img_html[] = $img;
 			}
 		}
+				
 		unset( $img, $id );
 
 		if ( count( $img_html ) == 1 ) {
@@ -355,48 +347,70 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 	 * @return string $html
 	 */
 	public function get_file_display( $id, $atts ) {
-		if ( ! $id || ! $this->file_exists_by_id( $id ) ) {
+		if ( ! $id ) {
 			return '';
 		}
 
-		$is_image = wp_attachment_is_image( $id );
-		$url      = FrmProFileField::get_file_url( $id, $is_image ? $atts['size'] : false );
+		print_R($id);
 
-		if ( ! FrmProFileField::user_has_permission( $id ) ) {
-			$frm_settings = FrmAppHelper::get_settings();
-			$html         = $frm_settings->admin_permission;
-		} else {
-			$html = $atts['show_image'] ? wp_get_attachment_image( $id, $atts['size'], ! $is_image ) : '';
+		$media_id_exploded = explode(",",$id);
+		$url      = 'https://' . $media_id_exploded[0] . '.nyc3.digitaloceanspaces.com/' . $media_id_exploded[1];
+		$is_image = $this->attachment_is( 'image', $url );
 
-			// If show_filename=1 is included
-			if ( $atts['show_filename'] ) {
-				$label = $this->get_single_file_name( $id );
-				if ( $atts['show_image'] ) {
-					$html .= ' <span id="frm_media_' . absint( $id ) . '" class="frm_upload_label">' . $label . '</span>';
-				} else {
-					$html .= $label;
-				}
-			}
+		$html = $atts['show_image'] ? '<img src="' . $url . '" />' : '';
 
-			// If neither show_image or show_filename are included, get file URL
-			if ( ! $html ) {
-				$html = $url;
-			}
-
-			// If add_link=1 is included
-			if ( $atts['add_link'] || ( ! $is_image && $atts['add_link_for_non_image'] ) ) {
-				$href   = $is_image ? FrmProFileField::get_file_url( $id ) : $url;
-				$target = ! empty( $atts['new_tab'] ) ? ' target="_blank"' : '';
-				$html   = '<a href="' . esc_attr( $href ) . '" class="frm_file_link"' . $target . '>' . $html . '</a>';
-			}
-
-			if ( ! empty( $atts['class'] ) ) {
-				$html = str_replace( ' class="', ' class="' . esc_attr( $atts['class'] . ' ' ), $html );
+		// If show_filename=1 is included
+		if ( $atts['show_filename'] ) {
+			$label = $media_id_exploded[1];
+			if ( $atts['show_image'] ) {
+				$html .= ' <span id="frm_media_' . absint( $id ) . '" class="frm_upload_label">' . $label . '</span>';
+			} else {
+				$html .= $label;
 			}
 		}
 
-		$atts['media_id'] = $id;
+			// If neither show_image or show_filename are included, get file URL
+		if ( ! $html ) {
+			$html = $url;
+		}
+
+			// If add_link=1 is included
+		if ( $atts['add_link'] || ( ! $is_image && $atts['add_link_for_non_image'] ) ) {
+			$href   = $url;
+			$target = ! empty( $atts['new_tab'] ) ? ' target="_blank"' : '';
+			$html   = '<a href="' . esc_attr( $href ) . '" class="frm_file_link"' . $target . '>' . $html . '</a>';
+		}
+
+		if ( ! empty( $atts['class'] ) ) {
+			$html = str_replace( ' class="', ' class="' . esc_attr( $atts['class'] . ' ' ), $html );
+		}
+
 		return apply_filters( 'frm_image_html_array', $html, $atts );
+	}
+
+	public function attachment_is( $type, $file ) {
+		$check = wp_check_filetype( $file );
+
+		if ( empty( $check['ext'] ) ) {
+			return false;
+		}
+
+		$ext = $check['ext'];
+
+		switch ( $type ) {
+			case 'image':
+				$image_exts = array( 'jpg', 'jpeg', 'jpe', 'gif', 'png', 'webp' );
+				return in_array( $ext, $image_exts, true );
+
+			case 'audio':
+				return in_array( $ext, wp_get_audio_extensions(), true );
+
+			case 'video':
+				return in_array( $ext, wp_get_video_extensions(), true );
+
+			default:
+				return $type === $ext;
+		}
 	}
 
 	/**

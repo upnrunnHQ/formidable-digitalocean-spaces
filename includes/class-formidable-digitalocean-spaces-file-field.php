@@ -165,9 +165,11 @@ class Formidable_Digitalocean_Spaces_File_Field {
 		}
 
 		foreach ( (array) $media_ids as $media_id ) {
-			$file = self::get_mock_file( $media_id );
-			if ( $file ) {
-				$mock_files[] = $file;
+			if ( $media_id ) {
+				$file = self::get_mock_file( $media_id );
+				if ( $file ) {
+					$mock_files[] = $file;
+				}
 			}
 		}
 	}
@@ -177,22 +179,19 @@ class Formidable_Digitalocean_Spaces_File_Field {
 	 * @return array
 	 */
 	private static function get_mock_file( $media_id ) {
-		$file_url  = $media_id['ObjectURL'];
-		$path      = $file_url;
+		$media_id_exploded = explode(",",$media_id);
+		$file_url  = 'https://' . $media_id_exploded[0] . '.nyc3.digitaloceanspaces.com/' . $media_id_exploded[1];
 		$file_type = wp_check_filetype( $file_url );
 		$file      = array(
-			'name'       => basename( $path ),
+			'id'         => $media_id,
+			'name'       => basename( $file_url ),
 			'url'        => $file_url,
-			'id'         => 0,
 			'file_url'   => $file_url,
 			'accessible' => true,
 			'ext'        => $file_type['ext'],
 			'type'       => $file_type['type'],
+			'size'       => isset( $media_id_exploded[2] ) ? $media_id_exploded[2] : 0,
 		);
-
-		if ( file_exists( $path ) ) {
-			$file['size'] = filesize( $path );
-		}
 
 		return $file;
 	}
