@@ -14,17 +14,21 @@ class Formidable_Digitalocean_Spaces_API {
 		$this->options = get_option( 'formidable_digitalocean_spaces_options' );
 
 		if ( $this->has_api_credentials() ) {
-			$this->client = new S3Client(
-				[
-					'version'     => 'latest',
-					'region'      => 'us-east-1',
-					'endpoint'    => $this->options['endpoint'],
-					'credentials' => [
-						'key'    => $this->options['key'],
-						'secret' => $this->options['secret'],
-					],
-				]
-			);
+			try {
+				$this->client = new S3Client(
+					[
+						'version'     => 'latest',
+						'region'      => 'us-east-1',
+						'endpoint'    => $this->options['endpoint'],
+						'credentials' => [
+							'key'    => $this->options['key'],
+							'secret' => $this->options['secret'],
+						],
+					]
+				);
+			} catch ( Exception $e ) {
+				$this->client = null;
+			}
 		}
 	}
 
@@ -61,7 +65,7 @@ class Formidable_Digitalocean_Spaces_API {
 	}
 
 	public function upload_file( $key = '', $attached_file = '' ) {
-		if ( $this->has_api_credentials() && $this->has_bucket_name() ) {
+		if ( $this->has_api_credentials() && $this->has_bucket_name() && $this->client ) {
 			try {
 				$bucket        = $this->get_bucket();
 				$bucket_exists = false;
@@ -103,7 +107,7 @@ class Formidable_Digitalocean_Spaces_API {
 	}
 
 	public function list_files() {
-		if ( $this->has_api_credentials() && $this->has_bucket_name() ) {
+		if ( $this->has_api_credentials() && $this->has_bucket_name() && $this->client ) {
 			return $this->client->listObjects(
 				[ 'Bucket' => $this->get_bucket() ]
 			);
