@@ -351,8 +351,6 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 			return '';
 		}
 
-		print_R($id);
-
 		$media_id_exploded = explode(",",$id);
 		$url      = 'https://' . $media_id_exploded[0] . '.nyc3.digitaloceanspaces.com/' . $media_id_exploded[1];
 		$is_image = $this->attachment_is( 'image', $url );
