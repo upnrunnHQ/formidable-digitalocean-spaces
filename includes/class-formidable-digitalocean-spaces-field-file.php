@@ -183,6 +183,8 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 			// return $value;
 		}
 
+		$atts = $this->set_file_atts( $atts );
+
 		$showing_image = ( isset( $atts['html'] ) && $atts['html'] ) || ( isset( $atts['show_image'] ) && $atts['show_image'] );
 		$default_sep   = $showing_image ? ' ' : ', ';
 		$atts['sep']   = isset( $atts['sep'] ) ? $atts['sep'] : $default_sep;
@@ -327,7 +329,7 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 				$img_html[] = $img;
 			}
 		}
-				
+
 		unset( $img, $id );
 
 		if ( count( $img_html ) == 1 ) {
@@ -351,11 +353,11 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 			return '';
 		}
 
-		$media_id_exploded = explode(",",$id);
-		$url      = 'https://' . $media_id_exploded[0] . '.nyc3.digitaloceanspaces.com/' . $media_id_exploded[1];
-		$is_image = $this->attachment_is( 'image', $url );
+		$media_id_exploded = explode( ',', $id );
+		$url               = 'https://' . $media_id_exploded[0] . '.nyc3.digitaloceanspaces.com/' . $media_id_exploded[1];
+		$is_image          = $this->attachment_is( 'image', $media_id_exploded[1] );
 
-		$html = $atts['show_image'] ? '<img src="' . $url . '" />' : '';
+		$html = $atts['show_image'] && $is_image ? '<img src="' . $url . '" />' : '';
 
 		// If show_filename=1 is included
 		if ( $atts['show_filename'] ) {

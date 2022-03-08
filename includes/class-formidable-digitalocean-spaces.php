@@ -74,26 +74,20 @@ final class Formidable_Digitalocean_Spaces {
 			$this->settings = new Formidable_Digitalocean_Spaces_Settings();
 		}
 
-		add_action( 'wp_ajax_test_do_spaces', [ $this, 'test_do_spaces' ] );
 		add_action( 'plugins_loaded', [ $this, 'on_plugins_loaded' ] );
-		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
+		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 		add_action( 'frm_after_create_entry', [ $this, 'upload_file' ], 30, 2 );
 		add_action( 'frm_after_update_entry', [ $this, 'upload_file' ], 10, 2 );
 		add_filter( 'frm_display_value_atts', [ $this, 'frm_display_value_atts' ], 10, 3 );
 		add_filter( 'frm_response_after_upload', [ $this, 'response_after_upload' ], 10, 2 );
+		add_filter( 'frm_keep_value_array', [ $this, 'keep_value_array' ], 10, 2 );
 	}
 
-	public function test_do_spaces() {
-		wp_send_json(
-			[
-				formidable_digitalocean_spaces()->api->upload_file(
-					'test.png',
-					'test'
-				),
-			]
-		);
-	}
-
+	/**
+	 * Undocumented function
+	 *
+	 * @return void
+	 */
 	public function on_plugins_loaded() {
 		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-field-file.php';
 		include_once FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'includes/class-formidable-digitalocean-spaces-file-field.php';
@@ -107,6 +101,11 @@ final class Formidable_Digitalocean_Spaces {
 		add_action( 'wp_ajax_frm_submit_dropzone', [ $this, 'ajax_upload' ] );
 	}
 
+	/**
+	 * Undocumented function
+	 *
+	 * @return void
+	 */
 	public function enqueue_scripts() {
 		if ( formidable_digitalocean_spaces()->api->has_api_credentials()
 			&& formidable_digitalocean_spaces()->api->has_bucket_name()
@@ -129,9 +128,23 @@ final class Formidable_Digitalocean_Spaces {
 					'wait_message' => formidable_digitalocean_spaces()->api->options['wait_message'],
 				)
 			);
+
+			wp_enqueue_style(
+				'formidable-digitalocean-spaces',
+				plugins_url( 'build/index.css', FORMIDABLE_DIGITALOCEAN_SPACES_FILE ),
+				[],
+				$asset_file['version']
+			);
 		}
 	}
 
+	/**
+	 * Undocumented function
+	 *
+	 * @param [type] $entry_id
+	 * @param [type] $form_id
+	 * @return void
+	 */
 	public function upload_file( $entry_id, $form_id ) {
 		if ( ! formidable_digitalocean_spaces()->api->has_api_credentials()
 			|| ! formidable_digitalocean_spaces()->api->has_bucket_name()
@@ -158,6 +171,13 @@ final class Formidable_Digitalocean_Spaces {
 		}
 	}
 
+	/**
+	 * Undocumented function
+	 *
+	 * @param [type] $class
+	 * @param [type] $field_type
+	 * @return void
+	 */
 	public function get_field_type_class( $class, $field_type ) {
 		if ( 'digitalocean_file' === $field_type ) {
 			return 'Upnrunn\Formidable_Digitalocean_Spaces_Field_File';
@@ -166,6 +186,12 @@ final class Formidable_Digitalocean_Spaces {
 		return $class;
 	}
 
+	/**
+	 * Undocumented function
+	 *
+	 * @param [type] $fields
+	 * @return void
+	 */
 	public function add_digitalocean_file_field( $fields ) {
 		$fields['digitalocean_file'] = array(
 			'name' => __( 'DO File Upload' ),
@@ -175,6 +201,11 @@ final class Formidable_Digitalocean_Spaces {
 		return $fields;
 	}
 
+	/**
+	 * Undocumented function
+	 *
+	 * @return void
+	 */
 	public static function ajax_upload() {
 		// Skip nonce for caching.
 		$response = Formidable_Digitalocean_Spaces_File_Field::ajax_upload();
@@ -191,6 +222,14 @@ final class Formidable_Digitalocean_Spaces {
 		wp_die( '', '', array( 'response' => $status ) );
 	}
 
+	/**
+	 * Undocumented function
+	 *
+	 * @param [type] $atts
+	 * @param [type] $field
+	 * @param [type] $value
+	 * @return void
+	 */
 	public function frm_display_value_atts( $atts, $field, $value ) {
 		if ( 'digitalocean_file' === $field->type ) {
 			$atts['truncate'] = false;
@@ -200,6 +239,13 @@ final class Formidable_Digitalocean_Spaces {
 		return $atts;
 	}
 
+	/**
+	 * Undocumented function
+	 *
+	 * @param [type] $response
+	 * @param [type] $field
+	 * @return void
+	 */
 	public function response_after_upload( $response, $field ) {
 		if ( ( 'digitalocean_file' === $field->type ) && isset( $response['media_ids'] ) && ! empty( $response['media_ids'] ) ) {
 			$media_ids = [];
@@ -228,6 +274,20 @@ final class Formidable_Digitalocean_Spaces {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param [type] $keep_value_array
+	 * @param [type] $args
+	 * @return void
+	 */
+	public function keep_value_array( $keep_value_array, $args ) {
+		if ( 'digitalocean_file' === $args['field']->type ) {
+			return true;
+		}
+		return $keep_value_array;
 	}
 
 	/**
