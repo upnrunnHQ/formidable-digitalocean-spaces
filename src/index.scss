@@ -4,15 +4,15 @@
 
 .frm_file_container {
     min-width: 356px;
+}
 
-    .frm_file_link {
-        display: inline-flex;
-        flex-wrap: nowrap;
-        flex-direction: column;
-        text-align: center;
-        align-items: center;
-        width: 100px;
-        margin-right: 10px;
-        margin-bottom: 10px;
-    }
+.frm_file_link {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    width: 100px;
+    margin-right: 10px;
+    margin-bottom: 10px;
 }

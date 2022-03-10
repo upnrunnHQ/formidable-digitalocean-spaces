@@ -164,10 +164,8 @@ final class Formidable_Digitalocean_Spaces {
 				continue;
 			}
 
-			$meta_added = \FrmEntryMeta::add_entry_meta( $entry_id, $field_id, null, $value );
-			if ( ! $meta_added ) {
-				\FrmEntryMeta::update_entry_meta( $entry_id, $field_id, null, $value );
-			}
+			\FrmEntryMeta::delete_entry_meta( $entry_id, $field_id );
+			\FrmEntryMeta::add_entry_meta( $entry_id, $field_id, null, $value );
 		}
 	}
 
