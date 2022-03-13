@@ -354,8 +354,13 @@ class Formidable_Digitalocean_Spaces_Field_File extends FrmFieldType {
 		}
 
 		$media_id_exploded = explode( ',', $id );
-		$url               = 'https://' . $media_id_exploded[0] . '.nyc3.digitaloceanspaces.com/' . $media_id_exploded[1];
-		$is_image          = $this->attachment_is( 'image', $media_id_exploded[1] );
+		$endpoint          = 'nyc3.digitaloceanspaces.com';
+		if ( isset( $media_id_exploded[3] ) ) {
+			$endpoint = $media_id_exploded[3];
+		}
+
+		$url      = 'https://' . $media_id_exploded[0] . '.' . $endpoint . '/' . $media_id_exploded[1];
+		$is_image = $this->attachment_is( 'image', $media_id_exploded[1] );
 
 		$html = $atts['show_image'] && $is_image ? '<img src="' . $url . '" />' : '';
 

@@ -40,6 +40,14 @@ class Formidable_Digitalocean_Spaces_API {
 		return true;
 	}
 
+	public function has_endpoint() {
+		if ( ! isset( $this->options['endpoint'] ) || empty( $this->options['endpoint'] ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
 	public function has_bucket_name() {
 		if ( ! isset( $this->options['bucket'] ) || empty( $this->options['bucket'] ) ) {
 			return false;
@@ -59,6 +67,14 @@ class Formidable_Digitalocean_Spaces_API {
 	public function get_bucket() {
 		if ( $this->has_bucket_name() ) {
 			return $this->options['bucket'];
+		}
+
+		return false;
+	}
+
+	public function get_endpoint() {
+		if ( $this->has_endpoint() ) {
+			return $this->options['endpoint'];
 		}
 
 		return false;

@@ -254,12 +254,14 @@ final class Formidable_Digitalocean_Spaces {
 					$file_name  = $media_id . '-' . basename( $attached_file );
 					$object_url = $this->api->upload_file( $file_name, $attached_file );
 					if ( $object_url ) {
+						$endpoint    = parse_url( formidable_digitalocean_spaces()->api->get_endpoint() );
 						$media_ids[] = implode(
 							',',
 							[
 								formidable_digitalocean_spaces()->api->get_bucket(),
 								$file_name,
 								filesize( $attached_file ),
+								$endpoint['host']
 							]
 						);
 

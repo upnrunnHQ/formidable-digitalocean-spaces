@@ -110,12 +110,12 @@ class Formidable_Digitalocean_Spaces_File_Field {
 
 			if ( strpos( $the_id, '-i' ) ) {
 				// we are editing, so get the base settings added too
-				$id_parts = explode( '-i', $the_id );
-				$base_id = $id_parts[0] . '-0';
+				$id_parts      = explode( '-i', $the_id );
+				$base_id       = $id_parts[0] . '-0';
 				$base_settings = $frm_vars['dropzone_loaded'][ $the_id ];
 				if ( ! isset( $frm_vars['dropzone_loaded'][ $base_id ] ) && strpos( $base_settings['fieldName'], '[i' . $id_parts[1] . ']' ) ) {
-					$base_settings['htmlID'] = $base_id;
-					$base_settings['fieldName'] = str_replace( '[i' . $id_parts[1] . ']', '[0]', $base_settings['fieldName'] );
+					$base_settings['htmlID']                 = $base_id;
+					$base_settings['fieldName']              = str_replace( '[i' . $id_parts[1] . ']', '[0]', $base_settings['fieldName'] );
 					$frm_vars['dropzone_loaded'][ $base_id ] = $base_settings;
 				}
 			}
@@ -179,8 +179,13 @@ class Formidable_Digitalocean_Spaces_File_Field {
 	 * @return array
 	 */
 	private static function get_mock_file( $media_id ) {
-		$media_id_exploded = explode(",",$media_id);
-		$file_url  = 'https://' . $media_id_exploded[0] . '.nyc3.digitaloceanspaces.com/' . $media_id_exploded[1];
+		$media_id_exploded = explode( ',', $media_id );
+		$endpoint          = 'nyc3.digitaloceanspaces.com';
+		if ( isset( $media_id_exploded[3] ) ) {
+			$endpoint = $media_id_exploded[3];
+		}
+
+		$file_url  = 'https://' . $media_id_exploded[0] . '.' . $endpoint . '/' . $media_id_exploded[1];
 		$file_type = wp_check_filetype( $file_url );
 		$file      = array(
 			'id'         => $media_id,
@@ -323,7 +328,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 			$frm_vars['file_fields'] = array();
 		}
 
-		$frm_vars['file_fields'][ $field->temp_id ]               = $args;
+		$frm_vars['file_fields'][ $field->temp_id ]             = $args;
 		$frm_vars['file_fields'][ $field->temp_id ]['field_id'] = $field->id;
 	}
 
@@ -563,7 +568,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 
 			//check allowed mime types for this field
 			$file_type = wp_check_filetype( $name, $mimes );
-			unset($name);
+			unset( $name );
 
 			if ( ! $file_type['ext'] ) {
 				break;
@@ -590,12 +595,12 @@ class Formidable_Digitalocean_Spaces_File_Field {
 	 * @return string
 	 */
 	private static function get_invalid_file_type_message( $field_name, $field_invalid_msg ) {
-		$default_invalid_messages = array( '' );
+		$default_invalid_messages   = array( '' );
 		$default_invalid_messages[] = __( 'This field is invalid', 'formidable-pro' );
 		$default_invalid_messages[] = $field_name . ' ' . __( 'is invalid', 'formidable-pro' );
-		$is_default_message = in_array( $field_invalid_msg, $default_invalid_messages );
+		$is_default_message         = in_array( $field_invalid_msg, $default_invalid_messages );
 
-		$invalid_type = __( 'Sorry, this file type is not permitted.', 'formidable-pro' );
+		$invalid_type    = __( 'Sorry, this file type is not permitted.', 'formidable-pro' );
 		$invalid_message = $is_default_message ? $invalid_type : $field_invalid_msg;
 
 		return $invalid_message;
@@ -667,7 +672,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 		_deprecated_function( __FUNCTION__, '3.0', 'FrmFieldType::get_value_to_save' );
 		$atts['field_id'] = $field_id;
 		$atts['entry_id'] = $entry_id;
-		$field_obj = FrmFieldFactory::get_field_object( $atts['field'] );
+		$field_obj        = FrmFieldFactory::get_field_object( $atts['field'] );
 		return $field_obj->get_value_to_save( $meta_value, $atts );
 	}
 
@@ -710,7 +715,10 @@ class Formidable_Digitalocean_Spaces_File_Field {
 		$file_uploads = $_FILES[ $args['file_name'] ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 
 		if ( self::file_was_selected( $file_uploads ) ) {
-			$response = array( 'errors' => array(), 'media_ids' => array() );
+			$response = array(
+				'errors'    => array(),
+				'media_ids' => array(),
+			);
 			self::upload_temp_files( $args['file_name'], $response, $field );
 
 			if ( ! empty( $response['media_ids'] ) ) {
@@ -767,7 +775,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 	 * @return bool
 	 */
 	private static function should_allow_ajax_upload_for_field( $field ) {
-		if ( ! $field || ! in_array( $field->type, [ 'file', 'digitalocean_file'], true ) ) {
+		if ( ! $field || ! in_array( $field->type, [ 'file', 'digitalocean_file' ], true ) ) {
 			return false;
 		}
 
@@ -827,7 +835,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 
 		if ( ! $new_media_ids ) {
 			if ( $errors ) {
-				$errors = array_map(
+				$errors             = array_map(
 					function( $error ) {
 						return $error->get_error_message();
 					},
@@ -883,7 +891,10 @@ class Formidable_Digitalocean_Spaces_File_Field {
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 
-		$response = array( 'media_ids' => array(), 'errors' => array() );
+		$response = array(
+			'media_ids' => array(),
+			'errors'    => array(),
+		);
 		add_filter( 'upload_dir', array( 'FrmProFileField', 'upload_dir' ) );
 
 		if ( ! $sideload && isset( $_FILES[ $file_id ] ) && isset( $_FILES[ $file_id ]['name'] ) && is_array( $_FILES[ $file_id ]['name'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
@@ -1126,8 +1137,8 @@ class Formidable_Digitalocean_Spaces_File_Field {
 		$relative_path = self::get_upload_dir_for_form( $form_id );
 
 		if ( ! empty( $relative_path ) ) {
-			$uploads['path'] = $uploads['basedir'] . '/' . $relative_path;
-			$uploads['url'] = $uploads['baseurl'] . '/' . $relative_path;
+			$uploads['path']   = $uploads['basedir'] . '/' . $relative_path;
+			$uploads['url']    = $uploads['baseurl'] . '/' . $relative_path;
 			$uploads['subdir'] = '/' . $relative_path;
 
 			self::create_index( $uploads, $relative_path );
@@ -1185,7 +1196,12 @@ class Formidable_Digitalocean_Spaces_File_Field {
 			return;
 		}
 
-		$upload_fields = FrmField::getAll( array( 'fi.type' => 'file', 'fi.form_id' => $entry->form_id ) );
+		$upload_fields = FrmField::getAll(
+			array(
+				'fi.type'    => 'file',
+				'fi.form_id' => $entry->form_id,
+			)
+		);
 		foreach ( $upload_fields as $field ) {
 			self::delete_files_from_field( $field, $entry );
 			unset( $field );
@@ -1340,7 +1356,12 @@ class Formidable_Digitalocean_Spaces_File_Field {
 	 */
 	public static function duplicate_files_with_entry( $entry_id, $form_id, $args ) {
 		$old_entry_id  = ! empty( $args['old_id'] ) ? $args['old_id'] : 0;
-		$upload_fields = FrmField::getAll( array( 'fi.type' => 'file', 'fi.form_id' => $form_id ) );
+		$upload_fields = FrmField::getAll(
+			array(
+				'fi.type'    => 'file',
+				'fi.form_id' => $form_id,
+			)
+		);
 
 		if ( ! $old_entry_id || ! $upload_fields ) {
 			return;
@@ -1692,7 +1713,13 @@ class Formidable_Digitalocean_Spaces_File_Field {
 
 		$protected = self::file_is_protected( $id, $form_id );
 
-		self::maybe_set_chmod( array( 'file_id' => $id, 'form_id' => $form_id, 'protected' => $protected ) );
+		self::maybe_set_chmod(
+			array(
+				'file_id'   => $id,
+				'form_id'   => $form_id,
+				'protected' => $protected,
+			)
+		);
 
 		if ( ! $protected ) {
 			return $builder->get_url();
@@ -1736,7 +1763,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 			$mime_type   = FrmProAppHelper::get_mime_type( $download['path'] );
 			$disposition = self::get_disposition( $mime_type );
 
-			header( FrmAppHelper::get_server_value('SERVER_PROTOCOL') . ' 200 OK');
+			header( FrmAppHelper::get_server_value( 'SERVER_PROTOCOL' ) . ' 200 OK' );
 			header( 'Cache-Control: public' ); // needed for internet explorer
 			header( 'Content-Type: ' . $mime_type );
 			header( 'Content-Transfer-Encoding: Binary' );
@@ -2089,7 +2116,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 		if ( self::file_protocol() . $payload !== $expected_request_uri ) {
 			// prevent urls like /something/frm_file/ from triggering a download
 			// in this case, leave out the code so the url just continues gracefully
-			return array( 'message'  => __( 'url is not an exact match', 'formidable-pro' ) );
+			return array( 'message' => __( 'url is not an exact match', 'formidable-pro' ) );
 		}
 
 		$original_file = get_attached_file( $file_id );
@@ -2223,7 +2250,7 @@ class Formidable_Digitalocean_Spaces_File_Field {
 	 */
 	private static function get_file_payload( $uri = false ) {
 		if ( ! $uri ) {
-			$uri = FrmAppHelper::get_server_value('REQUEST_URI');
+			$uri = FrmAppHelper::get_server_value( 'REQUEST_URI' );
 		}
 
 		$pattern  = self::file_protocol();
