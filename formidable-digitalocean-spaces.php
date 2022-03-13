@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name:     Digitalocean Spaces for Formidable Forms
- * Plugin URI:      PLUGIN SITE HERE
- * Description:     PLUGIN DESCRIPTION HERE
- * Author:          YOUR NAME HERE
- * Author URI:      YOUR SITE HERE
+ * Plugin Name:     Cloud Upload for Formidable Forms
+ * Plugin URI:      https://joneswebdesigns.com
+ * Description:     A Formmidable Forms Addon that allows for the uploading of media items to an S3 compatible bucket.  A new field is created with the Form Builder to allow for easy implementation.  Works for Amazon S3 and Digital Ocean Spaces.
+ * Author:          Jones Web Designs & Kishore Sahoo
+ * Author URI:      https://joneswebdesigns.com
  * Text Domain:     formidable-digitalocean-spaces
  * Domain Path:     /languages
  * Version:         0.1.0
