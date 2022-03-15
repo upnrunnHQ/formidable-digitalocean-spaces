@@ -116,10 +116,23 @@ class Formidable_Digitalocean_Spaces_API {
 		return false;
 	}
 
+	public function delete_file( $bucket, $keyname ) {
+		if ( $this->has_api_credentials() && $this->client ) {
+			$this->client->deleteObject(
+				[
+					'Bucket' => $bucket,
+					'Key'    => $keyname,
+				]
+			);
+		}
+	}
+
 	public function create_bucket() {
-		$this->client->createBucket(
-			[ 'Bucket' => $this->get_bucket() ]
-		);
+		if ( $this->has_api_credentials() && $this->has_bucket_name() && $this->client ) {
+			$this->client->createBucket(
+				[ 'Bucket' => $this->get_bucket() ]
+			);
+		}
 	}
 
 	public function list_files() {
