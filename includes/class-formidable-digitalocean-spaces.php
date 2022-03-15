@@ -106,6 +106,7 @@ final class Formidable_Digitalocean_Spaces {
 
 	public function on_init() {
 		// $this->delete_multiple_objects( 313 );
+		// print_r( formidable_digitalocean_spaces()->api->list_files() );
 	}
 
 	/**
