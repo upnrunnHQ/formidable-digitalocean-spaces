@@ -8,6 +8,8 @@ use FrmField;
 use FrmAppHelper;
 use FrmProFileField;
 use FrmEntry;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * WooCommerce_Grow_Cart class.
@@ -71,6 +73,10 @@ final class Formidable_Digitalocean_Spaces {
 	 */
 	private function hooks() {
 		$this->api = new Formidable_Digitalocean_Spaces_API();
+		// create a log channel
+		$this->logger = new Logger( 'formidable_digitalocean_spaces' );
+		$this->logger->pushHandler( new StreamHandler( FORMIDABLE_DIGITALOCEAN_SPACES_ABSPATH . 'formidable_digitalocean_spaces.log', Logger::DEBUG ) );
+
 		if ( is_admin() ) {
 			$this->settings = new Formidable_Digitalocean_Spaces_Settings();
 		}
@@ -84,6 +90,7 @@ final class Formidable_Digitalocean_Spaces {
 		add_filter( 'frm_response_after_upload', [ $this, 'response_after_upload' ], 10, 2 );
 		add_filter( 'frm_keep_value_array', [ $this, 'keep_value_array' ], 10, 2 );
 		add_action( 'frm_before_destroy_entry', [ $this, 'delete_multiple_objects' ] );
+		add_action( 'frm_pre_update_entry', [ $this, 'delete_removed_objects' ], 10, 2 );
 	}
 
 	/**
@@ -105,8 +112,11 @@ final class Formidable_Digitalocean_Spaces {
 	}
 
 	public function on_init() {
-		// $this->delete_multiple_objects( 313 );
 		// print_r( formidable_digitalocean_spaces()->api->list_files() );
+		// formidable_digitalocean_spaces()->api->delete_file(
+		// 	formidable_digitalocean_spaces()->api->get_bucket(),
+		// 	'1054-download.jpg',
+		// );
 	}
 
 	/**
@@ -315,6 +325,44 @@ final class Formidable_Digitalocean_Spaces {
 				);
 			}
 		}
+	}
+
+	public function delete_removed_objects( $values, $id ) {
+		foreach ( $values['item_meta'] as $field_id => $value ) {
+			$entry = FrmEntry::getOne( $id, true );
+			$field = FrmField::getOne( $field_id, true );
+
+			if ( $field ) {
+				if ( 'digitalocean_file' === $field->type ) {
+					$new_files = $this->list_files( $value );
+					$old_value = \FrmEntryMeta::get_meta_value( $entry, $field_id );
+					$old_files = $this->list_files( $old_value );
+
+					foreach ( $old_files as $old_file ) {
+						if ( in_array( $old_file, $new_files, true ) ) {
+							continue;
+						}
+
+						formidable_digitalocean_spaces()->api->delete_file(
+							formidable_digitalocean_spaces()->api->get_bucket(),
+							$old_file,
+						);
+					}
+				}
+			}
+		}
+	}
+
+	public function list_files( $value ) {
+		$list_files = [];
+		foreach ( $value as $file ) {
+			$exploded = explode( ',', $file );
+			if ( isset( $exploded[1] ) ) {
+				$list_files[] = $exploded[1];
+			}
+		}
+
+		return $list_files;
 	}
 
 	/**
